@@ -2,41 +2,46 @@
 <html lang="no">
 <head>
     <meta charset="UTF-8">
-    <title>Vaktplan April 2026</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vaktplan med Meny</title>
     <style>
-        body { font-family: 'Segoe UI', system-ui, sans-serif; margin: 20px; background: #f0f2f5; color: #333; }
+        body { font-family: 'Segoe UI', sans-serif; margin: 20px; background: #f0f2f5; color: #333; }
         .container { max-width: 1100px; margin: auto; }
-        h1 { text-align: center; color: #1a73e8; margin-bottom: 30px; }
+        h1 { text-align: center; color: #1a73e8; }
         
-        .week-container { background: white; padding: 20px; border-radius: 12px; margin-bottom: 30px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
-        .week-title { background: #1a73e8; color: white; padding: 6px 15px; border-radius: 20px; display: inline-block; margin-bottom: 15px; font-weight: bold; font-size: 0.9rem; }
+        .week-container { background: white; padding: 20px; border-radius: 12px; margin-bottom: 30px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); overflow-x: auto; }
+        .week-title { background: #1a73e8; color: white; padding: 6px 15px; border-radius: 20px; display: inline-block; margin-bottom: 15px; font-weight: bold; }
         
-        table { width: 100%; border-collapse: collapse; table-layout: fixed; }
-        th, td { border: 1px solid #eef0f2; padding: 8px; text-align: center; transition: all 0.2s; }
-        th { background: #f8f9fa; font-size: 11px; color: #666; text-transform: uppercase; }
+        table { width: 100%; border-collapse: collapse; min-width: 600px; }
+        th, td { border: 1px solid #eef0f2; padding: 5px; text-align: center; }
+        th { background: #f8f9fa; font-size: 11px; padding: 10px; }
         
-        .name-col { width: 140px; text-align: left; font-weight: bold; background: #fff !important; border-right: 2px solid #dee2e6; }
-        
-        /* Markering av dagens dato (hvis i april 2026) */
-        .today-col { background: #fff9c4 !important; border: 2px solid #fbc02d !important; }
+        .name-col { width: 140px; text-align: left; font-weight: bold; background: #fff !important; }
 
-        /* VAKT-FARGER */
+        /* DROPDOWN STYLING */
+        select {
+            width: 100%;
+            padding: 8px 2px;
+            border: none;
+            border-radius: 4px;
+            font-weight: bold;
+            text-align: center;
+            cursor: pointer;
+            appearance: none; /* Fjerner pilen for et renere utseende */
+            background: transparent;
+        }
+
+        /* FARGEKODER FOR VALG */
         .vakt-D { background-color: #d4edda !important; color: #155724; } 
         .vakt-L { background-color: #e2d9f3 !important; color: #4b2c85; } 
         .vakt-B { background-color: #fff3cd !important; color: #856404; } 
         .vakt-F { background-color: #f8d7da !important; color: #721c24; } 
         .vakt-A { background-color: #ffe5d0 !important; color: #853c00; }
-
-        input { width: 100%; border: none; background: transparent; text-align: center; font-size: 16px; font-weight: bold; outline: none; cursor: pointer; }
-        
-        .legend { display: flex; justify-content: center; gap: 15px; margin-top: 20px; flex-wrap: wrap; }
-        .legend-item { display: flex; align-items: center; gap: 5px; font-size: 13px; font-weight: 500; }
-        .box { width: 15px; height: 15px; border-radius: 3px; }
+        .vakt-tom { background-color: white; }
 
         .print-btn { display: block; margin: 20px auto; padding: 12px 25px; background: #1a73e8; color: white; border: none; cursor: pointer; border-radius: 8px; font-weight: bold; }
-        .print-btn:hover { background: #1557b0; }
-
-        @media print { .print-btn, .legend { display: none; } body { background: white; } .week-container { box-shadow: none; border: 1px solid #ccc; } }
+        
+        @media print { .print-btn { display: none; } select { border: none; } }
     </style>
 </head>
 <body>
@@ -44,25 +49,21 @@
 <div class="container">
     <h1>📅 Vaktplan April 2026</h1>
     <div id="wrapper"></div>
-
-    <div class="legend">
-        <div class="legend-item"><div class="box vakt-D"></div> Dagvakt (D)</div>
-        <div class="legend-item"><div class="box vakt-L"></div> kveldsvakt (L)</div>
-        <div class="legend-item"><div class="box vakt-B"></div> Bakvakt (B)</div>
-        <div class="legend-item"><div class="box vakt-A"></div> Ansvar (A)</div>
-        <div class="legend-item"><div class="box vakt-F"></div> Fri/Ferie (F)</div>
-    </div>
-
-    <button class="print-btn" onclick="window.print()">Skriv ut / Lagre som PDF</button>
+    <button class="print-btn" onclick="window.print()">Skriv ut / PDF</button>
 </div>
 
 <script>
     const ansatte = ["Alex", "Mats", "Ole Christian", "Pedro"];
     
-    // Sjekk om det er "i dag" i April 2026
-    const today = new Date();
-    const isApril26 = today.getMonth() === 3 && today.getFullYear() === 2026;
-    const currentDay = today.getDate();
+    // Definerer vakt-typene
+    const vakter = [
+        { kode: "", navn: "-" },
+        { kode: "D", navn: "D - Dag" },
+        { kode: "L", navn: "L - Kveld" },
+        { kode: "B", navn: "B - Bakvakt" },
+        { kode: "A", navn: "A - Ansvar" },
+        { kode: "F", navn: "F - Fri" }
+    ];
 
     const ukePlan = [
         { uke: 14, dager: [{n:1, t:"Ons"}, {n:2, t:"Tor"}, {n:3, t:"Fre"}] },
@@ -72,13 +73,6 @@
         { uke: 18, dager: [{n:27, t:"Man"}, {n:28, t:"Tir"}, {n:29, t:"Ons"}, {n:30, t:"Tor"}] }
     ];
 
-    const initialData = {
-        "Alex": { 1: "D", 6: "D", 8: "B", 9: "L" },
-        "Mats": { 1: "A", 6: "L", 7: "D", 9: "B" },
-        "Ole Christian": { 1: "L", 6: "B", 7: "L", 8: "D" },
-        "Pedro": { 1: "A", 7: "B", 8: "L", 9: "D" }
-    };
-
     const wrapper = document.getElementById('wrapper');
 
     ukePlan.forEach(ukeObj => {
@@ -87,22 +81,23 @@
         
         let html = `<div class="week-title">Uke ${ukeObj.uke}</div>`;
         html += `<table><thead><tr><th class="name-col">Ansatt</th>`;
-        ukeObj.dager.forEach(d => { 
-            let todayClass = (isApril26 && d.n === currentDay) ? 'today-col' : '';
-            html += `<th class="${todayClass}">${d.t} ${d.n}.</th>`; 
-        });
+        ukeObj.dager.forEach(d => { html += `<th>${d.t} ${d.n}.</th>`; });
         html += `</tr></thead><tbody>`;
 
         ansatte.forEach(navn => {
             html += `<tr><td class="name-col">${navn}</td>`;
             ukeObj.dager.forEach(d => {
-                let vakt = (initialData[navn] && initialData[navn][d.n]) ? initialData[navn][d.n] : "";
-                let key = `apr26-v3-${navn}-${d.n}`;
-                let saved = localStorage.getItem(key) || vakt;
-                let c = saved ? `vakt-${saved.toUpperCase()}` : "";
-                let todayClass = (isApril26 && d.n === currentDay) ? 'today-col' : '';
+                let key = `apr26-v4-${navn}-${d.n}`;
+                let saved = localStorage.getItem(key) || "";
+                let cellClass = saved ? `vakt-${saved}` : "vakt-tom";
                 
-                html += `<td class="${c} ${todayClass}"><input type="text" maxlength="1" value="${saved}" oninput="update(this, '${navn}', ${d.n})"></td>`;
+                html += `<td class="${cellClass}">`;
+                html += `<select onchange="update(this, '${navn}', ${d.n})">`;
+                vakter.forEach(v => {
+                    let selected = (saved === v.kode) ? "selected" : "";
+                    html += `<option value="${v.kode}" ${selected}>${v.kode || "-"}</option>`;
+                });
+                html += `</select></td>`;
             });
             html += `</tr>`;
         });
@@ -112,23 +107,16 @@
         wrapper.appendChild(div);
     });
 
-    function update(input, navn, dag) {
-        const val = input.value.toUpperCase().trim();
-        input.value = val;
-        const td = input.parentElement;
+    function update(select, navn, dag) {
+        const val = select.value;
+        const td = select.parentElement;
         
-        // Fjern gamle vakt-klasser
-        td.className = td.className.replace(/\bvakt-\S+/g, '');
+        // Oppdater farge på cellen
+        td.className = val ? `vakt-${val}` : "vakt-tom";
         
-        // Legg til ny klasse hvis verdi finnes
-        if (val) {
-            td.classList.add(`vakt-${val}`);
-        }
-        
-        localStorage.setItem(`apr26-v3-${navn}-${dag}`, val);
+        // Lagre til localStorage
+        localStorage.setItem(`apr26-v4-${navn}-${dag}`, val);
     }
 </script>
 </body>
 </html>
-
-
