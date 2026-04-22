@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vaktplan med Meny</title>
+    <title>Vaktplan - Jobb</title>
     <style>
         body { font-family: 'Segoe UI', sans-serif; margin: 20px; background: #f0f2f5; color: #333; }
         .container { max-width: 1100px; margin: auto; }
@@ -27,17 +27,22 @@
             font-weight: bold;
             text-align: center;
             cursor: pointer;
-            appearance: none; /* Fjerner pilen for et renere utseende */
+            appearance: none;
             background: transparent;
+            font-size: 14px;
         }
 
-        /* FARGEKODER FOR VALG */
-        .vakt-D { background-color: #d4edda !important; color: #155724; } 
-        .vakt-L { background-color: #e2d9f3 !important; color: #4b2c85; } 
-        .vakt-B { background-color: #fff3cd !important; color: #856404; } 
-        .vakt-F { background-color: #f8d7da !important; color: #721c24; } 
-        .vakt-A { background-color: #ffe5d0 !important; color: #853c00; }
+        /* FARGEKODER FOR VAKTER */
+        .vakt-D { background-color: #d4edda !important; color: #155724; } /* Grønn - Dispatch */
+        .vakt-L { background-color: #e2d9f3 !important; color: #4b2c85; } /* Lilla - Leasing */
+        .vakt-B { background-color: #fff3cd !important; color: #856404; } /* Gul - Bod */
+        .vakt-A { background-color: #ffe5d0 !important; color: #853c00; } /* Oransje - Avspasering */
+        .vakt-F { background-color: #f8d7da !important; color: #721c24; } /* Rød - Fri */
         .vakt-tom { background-color: white; }
+
+        .legend { display: flex; justify-content: center; gap: 15px; margin: 20px 0; flex-wrap: wrap; }
+        .legend-item { display: flex; align-items: center; gap: 5px; font-size: 13px; font-weight: 500; }
+        .box { width: 15px; height: 15px; border-radius: 3px; border: 1px solid #ddd; }
 
         .print-btn { display: block; margin: 20px auto; padding: 12px 25px; background: #1a73e8; color: white; border: none; cursor: pointer; border-radius: 8px; font-weight: bold; }
         
@@ -48,6 +53,15 @@
 
 <div class="container">
     <h1>📅 Vaktplan April 2026</h1>
+
+    <div class="legend">
+        <div class="legend-item"><div class="box vakt-D"></div> Dispatch (D)</div>
+        <div class="legend-item"><div class="box vakt-L"></div> Leasing (L)</div>
+        <div class="legend-item"><div class="box vakt-B"></div> Bod (B)</div>
+        <div class="legend-item"><div class="box vakt-A"></div> Avspasering (A)</div>
+        <div class="legend-item"><div class="box vakt-F"></div> Fri (F)</div>
+    </div>
+
     <div id="wrapper"></div>
     <button class="print-btn" onclick="window.print()">Skriv ut / PDF</button>
 </div>
@@ -55,14 +69,14 @@
 <script>
     const ansatte = ["Alex", "Mats", "Ole Christian", "Pedro"];
     
-    // Definerer vakt-typene
+    // Oppdaterte vakt-typer med dine navn
     const vakter = [
         { kode: "", navn: "-" },
-        { kode: "D", navn: "D - Dag" },
-        { kode: "L", navn: "L - Kveld" },
-        { kode: "B", navn: "B - Bakvakt" },
-        { kode: "A", navn: "A - Ansvar" },
-        { kode: "F", navn: "F - Fri" }
+        { kode: "D", navn: "Dispatch" },
+        { kode: "L", navn: "Leasing" },
+        { kode: "B", navn: "Bod" },
+        { kode: "A", navn: "Avspasering" },
+        { kode: "F", navn: "Fri" }
     ];
 
     const ukePlan = [
@@ -87,7 +101,7 @@
         ansatte.forEach(navn => {
             html += `<tr><td class="name-col">${navn}</td>`;
             ukeObj.dager.forEach(d => {
-                let key = `apr26-v4-${navn}-${d.n}`;
+                let key = `apr26-v5-${navn}-${d.n}`;
                 let saved = localStorage.getItem(key) || "";
                 let cellClass = saved ? `vakt-${saved}` : "vakt-tom";
                 
@@ -95,7 +109,8 @@
                 html += `<select onchange="update(this, '${navn}', ${d.n})">`;
                 vakter.forEach(v => {
                     let selected = (saved === v.kode) ? "selected" : "";
-                    html += `<option value="${v.kode}" ${selected}>${v.kode || "-"}</option>`;
+                    // Viser navnet i menyen, men lagrer koden
+                    html += `<option value="${v.kode}" ${selected}>${v.kode ? v.kode + ' (' + v.navn + ')' : '-'}</option>`;
                 });
                 html += `</select></td>`;
             });
@@ -110,12 +125,8 @@
     function update(select, navn, dag) {
         const val = select.value;
         const td = select.parentElement;
-        
-        // Oppdater farge på cellen
         td.className = val ? `vakt-${val}` : "vakt-tom";
-        
-        // Lagre til localStorage
-        localStorage.setItem(`apr26-v4-${navn}-${dag}`, val);
+        localStorage.setItem(`apr26-v5-${navn}-${dag}`, val);
     }
 </script>
 </body>
