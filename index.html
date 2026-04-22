@@ -5,63 +5,50 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Vaktplan - Jobb</title>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; margin: 20px; background: #f0f2f5; color: #333; }
-        .container { max-width: 1100px; margin: auto; }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; margin: 20px; background: #f0f2f5; color: #333; }
+        .container { max-width: 1200px; margin: auto; }
         h1 { text-align: center; color: #1a73e8; }
         
         .week-container { background: white; padding: 20px; border-radius: 12px; margin-bottom: 30px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); overflow-x: auto; }
         .week-title { background: #1a73e8; color: white; padding: 6px 15px; border-radius: 20px; display: inline-block; margin-bottom: 15px; font-weight: bold; }
         
-        table { width: 100%; border-collapse: collapse; min-width: 600px; }
-        th, td { border: 1px solid #eef0f2; padding: 5px; text-align: center; }
+        table { width: 100%; border-collapse: collapse; min-width: 800px; }
+        th, td { border: 1px solid #eef0f2; padding: 4px; text-align: center; }
         th { background: #f8f9fa; font-size: 11px; padding: 10px; }
         
-        .name-col { width: 140px; text-align: left; font-weight: bold; background: #fff !important; }
+        .name-col { width: 150px; text-align: left; font-weight: bold; background: #fff !important; padding-left: 10px; }
 
         /* DROPDOWN STYLING */
         select {
             width: 100%;
-            padding: 8px 2px;
+            padding: 10px 2px;
             border: none;
             border-radius: 4px;
-            font-weight: bold;
+            font-weight: 600;
             text-align: center;
             cursor: pointer;
             appearance: none;
             background: transparent;
-            font-size: 14px;
+            font-size: 13px;
         }
 
-        /* FARGEKODER FOR VAKTER */
-        .vakt-D { background-color: #d4edda !important; color: #155724; } /* Grønn - Dispatch */
-        .vakt-L { background-color: #e2d9f3 !important; color: #4b2c85; } /* Lilla - Leasing */
-        .vakt-B { background-color: #fff3cd !important; color: #856404; } /* Gul - Bod */
-        .vakt-A { background-color: #ffe5d0 !important; color: #853c00; } /* Oransje - Avspasering */
-        .vakt-F { background-color: #f8d7da !important; color: #721c24; } /* Rød - Fri */
+        /* FARGEKODER BASERT PÅ NAVN */
+        .vakt-Dispatch { background-color: #d4edda !important; color: #155724; } 
+        .vakt-Leasing { background-color: #e2d9f3 !important; color: #4b2c85; } 
+        .vakt-Bod { background-color: #fff3cd !important; color: #856404; } 
+        .vakt-Avspasering { background-color: #ffe5d0 !important; color: #853c00; } 
+        .vakt-Fri { background-color: #f8d7da !important; color: #721c24; }
         .vakt-tom { background-color: white; }
-
-        .legend { display: flex; justify-content: center; gap: 15px; margin: 20px 0; flex-wrap: wrap; }
-        .legend-item { display: flex; align-items: center; gap: 5px; font-size: 13px; font-weight: 500; }
-        .box { width: 15px; height: 15px; border-radius: 3px; border: 1px solid #ddd; }
 
         .print-btn { display: block; margin: 20px auto; padding: 12px 25px; background: #1a73e8; color: white; border: none; cursor: pointer; border-radius: 8px; font-weight: bold; }
         
-        @media print { .print-btn { display: none; } select { border: none; } }
+        @media print { .print-btn { display: none; } select { border: none; font-size: 12px; } }
     </style>
 </head>
 <body>
 
 <div class="container">
     <h1>📅 Vaktplan April 2026</h1>
-
-    <div class="legend">
-        <div class="legend-item"><div class="box vakt-D"></div> Dispatch (D)</div>
-        <div class="legend-item"><div class="box vakt-L"></div> Leasing (L)</div>
-        <div class="legend-item"><div class="box vakt-B"></div> Bod (B)</div>
-        <div class="legend-item"><div class="box vakt-A"></div> Avspasering (A)</div>
-        <div class="legend-item"><div class="box vakt-F"></div> Fri (F)</div>
-    </div>
-
     <div id="wrapper"></div>
     <button class="print-btn" onclick="window.print()">Skriv ut / PDF</button>
 </div>
@@ -69,15 +56,8 @@
 <script>
     const ansatte = ["Alex", "Mats", "Ole Christian", "Pedro"];
     
-    // Oppdaterte vakt-typer med dine navn
-    const vakter = [
-        { kode: "", navn: "-" },
-        { kode: "D", navn: "Dispatch" },
-        { kode: "L", navn: "Leasing" },
-        { kode: "B", navn: "Bod" },
-        { kode: "A", navn: "Avspasering" },
-        { kode: "F", navn: "Fri" }
-    ];
+    // Kun navnene på vaktene
+    const vakter = ["-", "Dispatch", "Leasing", "Bod", "Avspasering", "Fri"];
 
     const ukePlan = [
         { uke: 14, dager: [{n:1, t:"Ons"}, {n:2, t:"Tor"}, {n:3, t:"Fre"}] },
@@ -101,16 +81,15 @@
         ansatte.forEach(navn => {
             html += `<tr><td class="name-col">${navn}</td>`;
             ukeObj.dager.forEach(d => {
-                let key = `apr26-v5-${navn}-${d.n}`;
-                let saved = localStorage.getItem(key) || "";
-                let cellClass = saved ? `vakt-${saved}` : "vakt-tom";
+                let key = `apr26-v-fullnavn-${navn}-${d.n}`;
+                let saved = localStorage.getItem(key) || "-";
+                let cellClass = (saved !== "-") ? `vakt-${saved}` : "vakt-tom";
                 
                 html += `<td class="${cellClass}">`;
                 html += `<select onchange="update(this, '${navn}', ${d.n})">`;
                 vakter.forEach(v => {
-                    let selected = (saved === v.kode) ? "selected" : "";
-                    // Viser navnet i menyen, men lagrer koden
-                    html += `<option value="${v.kode}" ${selected}>${v.kode ? v.kode + ' (' + v.navn + ')' : '-'}</option>`;
+                    let selected = (saved === v) ? "selected" : "";
+                    html += `<option value="${v}" ${selected}>${v}</option>`;
                 });
                 html += `</select></td>`;
             });
@@ -125,8 +104,12 @@
     function update(select, navn, dag) {
         const val = select.value;
         const td = select.parentElement;
-        td.className = val ? `vakt-${val}` : "vakt-tom";
-        localStorage.setItem(`apr26-v5-${navn}-${dag}`, val);
+        
+        // Oppdater farge basert på navnet
+        td.className = (val !== "-") ? `vakt-${val}` : "vakt-tom";
+        
+        // Lagre
+        localStorage.setItem(`apr26-v-fullnavn-${navn}-${dag}`, val);
     }
 </script>
 </body>
