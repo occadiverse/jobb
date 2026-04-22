@@ -3,16 +3,38 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vaktplan - Dynamisk</title>
+    <title>Vaktplan Jobb</title>
     <style>
-        body { font-family: 'Segoe UI', system-ui, sans-serif; margin: 0; background: #f0f2f5; color: #333; padding-bottom: 50px; }
-        .header-bar { background: white; padding: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); sticky: top; z-index: 100; display: flex; justify-content: center; gap: 20px; align-items: center; position: sticky; top: 0; }
-        .container { max-width: 1200px; margin: 20px auto; padding: 0 20px; }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; margin: 0; background: #f0f2f5; color: #333; }
         
-        select.month-picker { padding: 10px 20px; border-radius: 8px; border: 2px solid #1a73e8; font-size: 16px; font-weight: bold; color: #1a73e8; cursor: pointer; }
+        /* KOMPAKT TOPPFELT */
+        .top-header { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            padding: 20px; 
+            max-width: 1200px; 
+            margin: 0 auto;
+        }
+
+        .title-group { display: flex; align-items: center; gap: 15px; }
+        h1 { margin: 0; color: #1a73e8; font-size: 1.5rem; white-space: nowrap; }
+
+        .container { max-width: 1200px; margin: 0 auto; padding: 0 20px 50px; }
+        
+        select.month-picker { 
+            padding: 8px 15px; 
+            border-radius: 8px; 
+            border: 2px solid #1a73e8; 
+            font-size: 1rem; 
+            font-weight: bold; 
+            color: #1a73e8; 
+            cursor: pointer;
+            background: white;
+        }
 
         .week-container { background: white; padding: 20px; border-radius: 12px; margin-bottom: 30px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); overflow-x: auto; }
-        .week-title { background: #1a73e8; color: white; padding: 6px 15px; border-radius: 20px; display: inline-block; margin-bottom: 15px; font-weight: bold; }
+        .week-title { background: #1a73e8; color: white; padding: 4px 12px; border-radius: 20px; display: inline-block; margin-bottom: 15px; font-weight: bold; font-size: 0.9rem; }
         
         table { width: 100%; border-collapse: collapse; min-width: 800px; }
         th, td { border: 1px solid #eef0f2; padding: 4px; text-align: center; }
@@ -30,21 +52,38 @@
         .vakt-Fri { background-color: #f8d7da !important; color: #721c24; }
         .vakt-tom { background-color: white; }
 
-        .print-btn { background: #64748b; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; }
+        .print-btn { 
+            background: #64748b; 
+            color: white; 
+            border: none; 
+            padding: 10px 18px; 
+            border-radius: 8px; 
+            cursor: pointer; 
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+        .print-btn:hover { background: #475569; }
         
-        @media print { .header-bar { display: none; } .week-container { box-shadow: none; border: 1px solid #ddd; } }
+        @media print { 
+            .top-header { border-bottom: 1px solid #ccc; margin-bottom: 20px; }
+            .print-btn, .month-picker { display: none; } 
+            h1::after { content: " " attr(data-month); } /* Legger til måned i tekst ved print */
+            .week-container { box-shadow: none; border: 1px solid #ddd; } 
+        }
     </style>
 </head>
 <body>
 
-<div class="header-bar">
-    <select id="monthSelect" class="month-picker" onchange="initCalendar()">
-        </select>
-    <button class="print-btn" onclick="window.print()">Skriv ut / PDF</button>
+<div class="top-header">
+    <div class="title-group">
+        <h1 id="mainTitle">Vaktplan</h1>
+        <select id="monthSelect" class="month-picker" onchange="initCalendar()">
+            </select>
+    </div>
+    <button class="print-btn" onclick="window.print()">🖨️ Skriv ut / PDF</button>
 </div>
 
 <div class="container">
-    <h1 id="mainTitle" style="text-align: center; color: #1a73e8;">Vaktplan</h1>
     <div id="wrapper"></div>
 </div>
 
@@ -53,14 +92,17 @@
     const vakter = ["-", "Dispatch", "Leasing", "Bod", "Avspasering", "Fri"];
     const måneder = ["Januar", "Februar", "Mars", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Desember"];
 
-    // Fyll måned-velgeren
     const monthSelect = document.getElementById('monthSelect');
+    const mainTitle = document.getElementById('mainTitle');
     const currentYear = 2026;
+
+    // Fyll måned-velgeren
     måneder.forEach((m, i) => {
         let opt = document.createElement('option');
         opt.value = i;
         opt.innerText = m + " " + currentYear;
-        if(i === 3) opt.selected = true; // Setter April som standard
+        // Setter nåværende måned som default (April i dette eksemplet)
+        if(i === 3) opt.selected = true; 
         monthSelect.appendChild(opt);
     });
 
@@ -74,16 +116,18 @@
     function initCalendar() {
         const monthIndex = parseInt(monthSelect.value);
         const wrapper = document.getElementById('wrapper');
-        document.getElementById('mainTitle').innerText = `Vaktplan ${måneder[monthIndex]} ${currentYear}`;
+        
+        // Oppdaterer "h1" med måned for utskrift-triks
+        mainTitle.setAttribute('data-month', måneder[monthIndex] + " " + currentYear);
+        
         wrapper.innerHTML = "";
 
-        // Finn alle dager i valgt måned (kun hverdager Man-Fre)
         let date = new Date(currentYear, monthIndex, 1);
         let uker = {};
 
         while (date.getMonth() === monthIndex) {
             let dayOfWeek = date.getDay();
-            if (dayOfWeek !== 0 && dayOfWeek !== 6) { // Hopp over lør og søn
+            if (dayOfWeek !== 0 && dayOfWeek !== 6) { // Kun hverdager
                 let wNum = getWeekNumber(new Date(date));
                 if (!uker[wNum]) uker[wNum] = [];
                 uker[wNum].push({
@@ -94,7 +138,6 @@
             date.setDate(date.getDate() + 1);
         }
 
-        // Tegn hver uke
         for (let wNum in uker) {
             let div = document.createElement('div');
             div.className = 'week-container';
@@ -107,7 +150,7 @@
             ansatte.forEach(navn => {
                 html += `<tr><td class="name-col">${navn}</td>`;
                 uker[wNum].forEach(d => {
-                    let storageKey = `vakt-${currentYear}-${monthIndex}-${navn}-${d.nr}`;
+                    let storageKey = `vakt-full-${currentYear}-${monthIndex}-${navn}-${d.nr}`;
                     let saved = localStorage.getItem(storageKey) || "-";
                     let cellClass = (saved !== "-") ? `vakt-${saved}` : "vakt-tom";
                     
@@ -135,7 +178,6 @@
         localStorage.setItem(key, val);
     }
 
-    // Start
     initCalendar();
 </script>
 
