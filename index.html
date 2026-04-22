@@ -3,36 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vaktplan - Jobb</title>
+    <title>Vaktplan - Dynamisk</title>
     <style>
-        body { font-family: 'Segoe UI', system-ui, sans-serif; margin: 20px; background: #f0f2f5; color: #333; }
-        .container { max-width: 1200px; margin: auto; }
-        h1 { text-align: center; color: #1a73e8; }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; margin: 0; background: #f0f2f5; color: #333; padding-bottom: 50px; }
+        .header-bar { background: white; padding: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); sticky: top; z-index: 100; display: flex; justify-content: center; gap: 20px; align-items: center; position: sticky; top: 0; }
+        .container { max-width: 1200px; margin: 20px auto; padding: 0 20px; }
         
+        select.month-picker { padding: 10px 20px; border-radius: 8px; border: 2px solid #1a73e8; font-size: 16px; font-weight: bold; color: #1a73e8; cursor: pointer; }
+
         .week-container { background: white; padding: 20px; border-radius: 12px; margin-bottom: 30px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); overflow-x: auto; }
         .week-title { background: #1a73e8; color: white; padding: 6px 15px; border-radius: 20px; display: inline-block; margin-bottom: 15px; font-weight: bold; }
         
         table { width: 100%; border-collapse: collapse; min-width: 800px; }
         th, td { border: 1px solid #eef0f2; padding: 4px; text-align: center; }
-        th { background: #f8f9fa; font-size: 11px; padding: 10px; }
+        th { background: #f8f9fa; font-size: 11px; padding: 10px; text-transform: uppercase; }
         
         .name-col { width: 150px; text-align: left; font-weight: bold; background: #fff !important; padding-left: 10px; }
 
-        /* DROPDOWN STYLING */
-        select {
-            width: 100%;
-            padding: 10px 2px;
-            border: none;
-            border-radius: 4px;
-            font-weight: 600;
-            text-align: center;
-            cursor: pointer;
-            appearance: none;
-            background: transparent;
-            font-size: 13px;
-        }
+        select.vakt-select { width: 100%; padding: 10px 2px; border: none; border-radius: 4px; font-weight: 600; text-align: center; cursor: pointer; appearance: none; background: transparent; font-size: 13px; }
 
-        /* FARGEKODER BASERT PÅ NAVN */
+        /* FARGER */
         .vakt-Dispatch { background-color: #d4edda !important; color: #155724; } 
         .vakt-Leasing { background-color: #e2d9f3 !important; color: #4b2c85; } 
         .vakt-Bod { background-color: #fff3cd !important; color: #856404; } 
@@ -40,77 +30,114 @@
         .vakt-Fri { background-color: #f8d7da !important; color: #721c24; }
         .vakt-tom { background-color: white; }
 
-        .print-btn { display: block; margin: 20px auto; padding: 12px 25px; background: #1a73e8; color: white; border: none; cursor: pointer; border-radius: 8px; font-weight: bold; }
+        .print-btn { background: #64748b; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; }
         
-        @media print { .print-btn { display: none; } select { border: none; font-size: 12px; } }
+        @media print { .header-bar { display: none; } .week-container { box-shadow: none; border: 1px solid #ddd; } }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h1>📅 Vaktplan April 2026</h1>
-    <div id="wrapper"></div>
+<div class="header-bar">
+    <select id="monthSelect" class="month-picker" onchange="initCalendar()">
+        </select>
     <button class="print-btn" onclick="window.print()">Skriv ut / PDF</button>
+</div>
+
+<div class="container">
+    <h1 id="mainTitle" style="text-align: center; color: #1a73e8;">Vaktplan</h1>
+    <div id="wrapper"></div>
 </div>
 
 <script>
     const ansatte = ["Alex", "Mats", "Ole Christian", "Pedro"];
-    
-    // Kun navnene på vaktene
     const vakter = ["-", "Dispatch", "Leasing", "Bod", "Avspasering", "Fri"];
+    const måneder = ["Januar", "Februar", "Mars", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Desember"];
 
-    const ukePlan = [
-        { uke: 14, dager: [{n:1, t:"Ons"}, {n:2, t:"Tor"}, {n:3, t:"Fre"}] },
-        { uke: 15, dager: [{n:6, t:"Man"}, {n:7, t:"Tir"}, {n:8, t:"Ons"}, {n:9, t:"Tor"}, {n:10, t:"Fre"}] },
-        { uke: 16, dager: [{n:13, t:"Man"}, {n:14, t:"Tir"}, {n:15, t:"Ons"}, {n:16, t:"Tor"}, {n:17, t:"Fre"}] },
-        { uke: 17, dager: [{n:20, t:"Man"}, {n:21, t:"Tir"}, {n:22, t:"Ons"}, {n:23, t:"Tor"}, {n:24, t:"Fre"}] },
-        { uke: 18, dager: [{n:27, t:"Man"}, {n:28, t:"Tir"}, {n:29, t:"Ons"}, {n:30, t:"Tor"}] }
-    ];
-
-    const wrapper = document.getElementById('wrapper');
-
-    ukePlan.forEach(ukeObj => {
-        let div = document.createElement('div');
-        div.className = 'week-container';
-        
-        let html = `<div class="week-title">Uke ${ukeObj.uke}</div>`;
-        html += `<table><thead><tr><th class="name-col">Ansatt</th>`;
-        ukeObj.dager.forEach(d => { html += `<th>${d.t} ${d.n}.</th>`; });
-        html += `</tr></thead><tbody>`;
-
-        ansatte.forEach(navn => {
-            html += `<tr><td class="name-col">${navn}</td>`;
-            ukeObj.dager.forEach(d => {
-                let key = `apr26-v-fullnavn-${navn}-${d.n}`;
-                let saved = localStorage.getItem(key) || "-";
-                let cellClass = (saved !== "-") ? `vakt-${saved}` : "vakt-tom";
-                
-                html += `<td class="${cellClass}">`;
-                html += `<select onchange="update(this, '${navn}', ${d.n})">`;
-                vakter.forEach(v => {
-                    let selected = (saved === v) ? "selected" : "";
-                    html += `<option value="${v}" ${selected}>${v}</option>`;
-                });
-                html += `</select></td>`;
-            });
-            html += `</tr>`;
-        });
-
-        html += `</tbody></table>`;
-        div.innerHTML = html;
-        wrapper.appendChild(div);
+    // Fyll måned-velgeren
+    const monthSelect = document.getElementById('monthSelect');
+    const currentYear = 2026;
+    måneder.forEach((m, i) => {
+        let opt = document.createElement('option');
+        opt.value = i;
+        opt.innerText = m + " " + currentYear;
+        if(i === 3) opt.selected = true; // Setter April som standard
+        monthSelect.appendChild(opt);
     });
 
-    function update(select, navn, dag) {
+    function getWeekNumber(d) {
+        d = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+        d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
+        var yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+        return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+    }
+
+    function initCalendar() {
+        const monthIndex = parseInt(monthSelect.value);
+        const wrapper = document.getElementById('wrapper');
+        document.getElementById('mainTitle').innerText = `Vaktplan ${måneder[monthIndex]} ${currentYear}`;
+        wrapper.innerHTML = "";
+
+        // Finn alle dager i valgt måned (kun hverdager Man-Fre)
+        let date = new Date(currentYear, monthIndex, 1);
+        let uker = {};
+
+        while (date.getMonth() === monthIndex) {
+            let dayOfWeek = date.getDay();
+            if (dayOfWeek !== 0 && dayOfWeek !== 6) { // Hopp over lør og søn
+                let wNum = getWeekNumber(new Date(date));
+                if (!uker[wNum]) uker[wNum] = [];
+                uker[wNum].push({
+                    nr: date.getDate(),
+                    navn: ["Søn", "Man", "Tir", "Ons", "Tor", "Fre", "Lør"][dayOfWeek]
+                });
+            }
+            date.setDate(date.getDate() + 1);
+        }
+
+        // Tegn hver uke
+        for (let wNum in uker) {
+            let div = document.createElement('div');
+            div.className = 'week-container';
+            
+            let html = `<div class="week-title">Uke ${wNum}</div>`;
+            html += `<table><thead><tr><th class="name-col">Ansatt</th>`;
+            uker[wNum].forEach(d => { html += `<th>${d.navn} ${d.nr}.</th>`; });
+            html += `</tr></thead><tbody>`;
+
+            ansatte.forEach(navn => {
+                html += `<tr><td class="name-col">${navn}</td>`;
+                uker[wNum].forEach(d => {
+                    let storageKey = `vakt-${currentYear}-${monthIndex}-${navn}-${d.nr}`;
+                    let saved = localStorage.getItem(storageKey) || "-";
+                    let cellClass = (saved !== "-") ? `vakt-${saved}` : "vakt-tom";
+                    
+                    html += `<td class="${cellClass}">
+                        <select class="vakt-select" onchange="update(this, '${storageKey}')">`;
+                    vakter.forEach(v => {
+                        let sel = (saved === v) ? "selected" : "";
+                        html += `<option value="${v}" ${sel}>${v}</option>`;
+                    });
+                    html += `</select></td>`;
+                });
+                html += `</tr>`;
+            });
+
+            html += `</tbody></table>`;
+            div.innerHTML = html;
+            wrapper.appendChild(div);
+        }
+    }
+
+    function update(select, key) {
         const val = select.value;
         const td = select.parentElement;
-        
-        // Oppdater farge basert på navnet
         td.className = (val !== "-") ? `vakt-${val}` : "vakt-tom";
-        
-        // Lagre
-        localStorage.setItem(`apr26-v-fullnavn-${navn}-${dag}`, val);
+        localStorage.setItem(key, val);
     }
+
+    // Start
+    initCalendar();
 </script>
+
 </body>
 </html>
