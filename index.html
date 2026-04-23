@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vaktplan Jobb - v7 (Ren Rullering)</title>
+    <title>Vaktplan Jobb - v8 (Ren meny)</title>
     <style>
         body { font-family: 'Segoe UI', system-ui, sans-serif; margin: 0; background: #f0f2f5; color: #333; }
         
@@ -80,6 +80,7 @@
         .vakt-Fri { background-color: #f8d7da !important; color: #721c24; }
         .vakt-tom { background-color: white; }
 
+        /* KNAPPER */
         .btn { padding: 10px 15px; border-radius: 8px; border: none; cursor: pointer; font-weight: bold; font-size: 0.85rem; transition: 0.2s; }
         .btn-magic { background: #8b5cf6; color: white; }
         .btn-print { background: #64748b; color: white; }
@@ -87,6 +88,11 @@
         .btn-import { background: #f59e0b; color: white; }
         .btn-csv { background: #3b82f6; color: white; }
         
+        /* SKJULER DE STYGGE STANDARDKNAPPENE */
+        input[type="file"] { 
+            display: none !important; 
+        }
+
         @media print { 
             .btn, .month-picker, input { display: none !important; } 
             .week-container { box-shadow: none !important; border: 1px solid #ddd !important; background: white !important; } 
@@ -103,8 +109,8 @@
     <div class="action-bar">
         <button class="btn btn-magic" onclick="fyllRullering()">✨ Fyll rullering</button>
         <button class="btn btn-csv" onclick="document.getElementById('csvInput').click()">📊 CSV</button>
-        <button class="btn btn-export" onclick="exportData()">💾 JSON</button>
-        <button class="btn btn-import" onclick="document.getElementById('fileInput').click()">📂 JSON</button>
+        <button class="btn btn-export" onclick="exportData()">💾 Lagre JSON</button>
+        <button class="btn btn-import" onclick="document.getElementById('fileInput').click()">📂 Last inn JSON</button>
         <button class="btn btn-print" onclick="window.print()">🖨️ Print</button>
         
         <input type="file" id="fileInput" accept=".json" onchange="importData(event)">
@@ -118,7 +124,6 @@
 
 <script>
     const ansatte = ["Alex", "Mats", "Ole Christian", "Pedro"];
-    // Rulleringsmønsteret bruker nå "-" for å indikere ingen vakt
     const rulleringsMønster = ["Dispatch", "Leasing", "Bod", "-"];
     const vakter = ["-", "Dispatch", "Leasing", "Bod", "Avspasering", "Fri"];
     const måneder = ["Januar", "Februar", "Mars", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Desember"];
@@ -204,7 +209,7 @@
     }
 
     function fyllRullering() {
-        if (!confirm("Fyll ut tomme vakter med rullering (Dispatch, Leasing, Bod)?")) return;
+        if (!confirm("Fyll ut tomme vakter med rullering?")) return;
         
         const monthIndex = parseInt(monthSelect.value);
         let date = new Date(currentYear, monthIndex, 1);
@@ -227,7 +232,6 @@
         initCalendar();
     }
 
-    // Eksport/Import funksjoner forblir de samme
     function exportData() {
         const data = {};
         for (let i = 0; i < localStorage.length; i++) {
@@ -246,9 +250,11 @@
         if (!file) return;
         const reader = new FileReader();
         reader.onload = function(e) {
-            const data = JSON.parse(e.target.result);
-            Object.keys(data).forEach(k => localStorage.setItem(k, data[k]));
-            initCalendar();
+            try {
+                const data = JSON.parse(e.target.result);
+                Object.keys(data).forEach(k => localStorage.setItem(k, data[k]));
+                initCalendar();
+            } catch(e) { alert("Feil ved lesing av JSON."); }
         };
         reader.readAsText(file);
     }
